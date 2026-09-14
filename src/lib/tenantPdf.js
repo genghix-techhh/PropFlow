@@ -287,7 +287,13 @@ export async function generateTenantPdf(tenant, invoices = [], options = {}) {
   if (options.print) {
     printGeneratedPdf(doc)
   } else {
-    const fileSafeName = (tenant.full_name || "tenant").trim().replace(/\s+/g, "_")
-    doc.save(`${fileSafeName}_profile.pdf`)
+    // Tenant name only, no "_profile" suffix — just strip characters that are
+    // invalid in a Windows/macOS file name and any trailing dot/space (Windows
+    // rejects both), but otherwise keep the name exactly as entered.
+    const fileSafeName = (tenant.full_name || "Tenant")
+      .trim()
+      .replace(/[\\/:*?"<>|]/g, "")
+      .replace(/[.\s]+$/, "") || "Tenant"
+    doc.save(`${fileSafeName}.pdf`)
   }
 }
