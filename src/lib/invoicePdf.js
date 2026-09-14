@@ -294,6 +294,21 @@ export async function generateInvoicePdf(invoice, utilityCharges = [], discountC
   if (options.print) {
     printGeneratedPdf(doc)
   } else {
-    doc.save(`${invoice.invoice_number || "invoice"}.pdf`)
+    // Tenant name + date, e.g. "Ahmad Ali Khan - 2026-09-05.pdf" — matches the
+    // same "name only, no clutter" convention as the tenant profile PDF (see
+    // tenantPdf.js), plus the invoice's due date so multiple invoices for the
+    // same tenant don't overwrite each other. Falls back to the billing
+    // period, then today's date, if there's no due date on the invoice.
+    const fileSafeName = (tenant?.full_name || "Tenant")
+      .trim()
+      .replace(/[\\/:*?"<>|]/g, "")
+      .replace(/[.\s]+$/, "") || "Tenant"
+    const dateForFile = invoice.due_date
+      ? new Date(invoice.due_date)
+      : invoice.year && invoice.month
+        ? new Date(invoice.year, invoice.month - 1, 1)
+        : new Date()
+    const fileDateStr = dateForFile.toLocaleDateString("en-CA") // YYYY-MM-DD — sortable, filename-safe
+    doc.save(`${fileSafeName} - ${fileDateStr}.pdf`)
   }
 }
